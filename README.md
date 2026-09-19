@@ -36,11 +36,59 @@ PNG/PDF export; set `DRAWIO=<path>` if it is not in a standard location).
 
 ## Use
 
-Ask Claude Code for a diagram, for example:
+Once installed, the skill loads automatically when you ask Claude Code for an architecture diagram. Example
+prompts, by situation:
 
-> Create an A4 architecture diagram of this Azure subscription.
-> Redraw this architecture so the private endpoints sit in a grid under their services.
-> Fit this diagram on A4 at font size 10 with no wasted space.
+### From a live cloud environment
+Claude inventories the resources first (Azure CLI / Resource Graph, AWS CLI, `gcloud`) and draws only what it verified.
+
+- `Create an A4 architecture diagram of my Azure subscription "sub-prod-001".`
+- `Diagram the resource group rg-payments-prod: VNets, subnets, private endpoints, DNS zones and data services.`
+- `Draw the network topology of this landing zone - hub, spokes, peering, route tables and firewall next hops.`
+- `Map every private endpoint in this subscription to its service and show which DNS zone resolves it.`
+- `Visualise our AWS production VPC - subnets, NAT/Internet gateways, load balancers, ECS services and RDS.`
+
+### From a description, notes or code
+- `Draw an architecture diagram for this design: users hit Front Door, which routes to two App Services behind
+  private endpoints; they use Azure SQL, Key Vault and Service Bus; Functions process the queue.`
+- `Turn this Terraform folder into an architecture diagram on A4.`
+- `Here is our solution design doc - produce the logical architecture diagram with numbered key flows.`
+- `Diagram this Kubernetes platform: ingress, namespaces, services, managed databases and the CI/CD image flow.`
+
+### From a reference image or house style
+- `Create my architecture diagram so it looks like this reference image` (attach the image).
+- `Match the layout of the attached whiteboard photo, but with our real resource names.`
+- `Redraw this old Visio export in the same professional style.`
+
+### Rearranging and polishing
+- `Arrange the private endpoints in a two-row grid and line the services up under them.`
+- `There is too much white space in the private endpoint subnet - tighten it.`
+- `Move the legend and key flows into the empty margins.`
+- `Make it look like it was designed by a professional architect.`
+- `The Front Door line crosses the subnet labels - reroute it.`
+
+### Print and page size
+- `Fit this diagram on one A4 landscape page with every label at font size 10.`
+- `This is too dense for A4 - give me an A3 version as well.`
+- `It is a small system - use the smallest page that keeps text at size 10.`
+- `Export the diagram as .drawio, a 300 dpi PNG and a PDF.`
+
+### Findings and reviews
+- `Add a Key Observations panel for public network access, missing DNS zones and orphaned resources.`
+- `Mark every resource with public access enabled in red and show private ones as private.`
+- `Show the numbered data flows and explain each one in a Key Flows panel.`
+
+### Checking an existing diagram
+- `Lint my diagram.drawio for overlapping labels and wasted space, then fix what it finds.`
+- `Review this architecture diagram and tell me what a reviewer would flag.`
+
+### Tips for good results
+- Give it facts, not just names: SKUs, IP ranges, which service talks to which. It draws only what it can verify
+  and marks anything inferred.
+- Say the page size and font size you need up front (default: A4 landscape, font 10).
+- Ask for changes by what you see ("the right column is empty", "labels collide under SQL"). Claude edits the
+  build script and re-renders, so rearranging is quick.
+- Keep the generated build script next to the diagram; rerun it after the environment changes.
 
 Or use the library directly:
 
