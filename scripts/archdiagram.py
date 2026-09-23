@@ -8,11 +8,11 @@ Library:
     ...                                      # containers, icons, panels, edges, badges
     d.save("out.drawio")
     print(*lint_file("out.drawio"), sep="\n")
-    render("out.drawio")                     # -> out.png (3x) + out.pdf (page size)
+    render("out.drawio")                     # -> out.png (3x, 12 px margin) + out.pdf (page size)
 
 CLI:
     python archdiagram.py lint   <file.drawio>
-    python archdiagram.py render <file.drawio> [--scale 3] [--formats png,pdf]
+    python archdiagram.py render <file.drawio> [--scale 3] [--formats png,pdf] [--border 12]
 
 Coordinates are draw.io page units (A4 landscape = 1169 x 827). Lay out at the final page size
 and keep the font size fixed; never shrink a finished drawing to fit a page.
@@ -263,6 +263,31 @@ class Diagram:
                         f"rounded=1;arcSize=50;html=1;fillColor={fill};strokeColor={stroke};{self.F}fontSize={self.fs};fontStyle=1;fontColor={fc};", chip)
         self.vertex("rule", 24, 53, self.W - 48, 1.5, f"rounded=0;fillColor={COLORS['blue']};strokeColor=none;")
         return 64
+
+    def frame_content(self, pad=16, id="frame"):
+        """Outer border for a figure that has no sheet frame (e.g. a crop placed in a Word document): a rounded
+        rectangle `pad` px outside every shape, icon label and edge waypoint. Call it last, just before save()."""
+        boxes = []
+        for c in self.cells:
+            if c["t"] == "v":
+                x, y, w, h = c["g"]
+                boxes.append((x, y, x + w, y + h))
+                st = _style(c["style"])
+                if c["value"] and "image" in st:
+                    r = _label_rect(x, y, w, h, c["value"], st, self.fs)
+                    if r:
+                        boxes.append(r)
+            elif c["t"] == "lg":
+                x1, x2, yy = c["p"]
+                boxes.append((min(x1, x2), yy, max(x1, x2), yy))
+            else:
+                boxes += [(px, py, px, py) for px, py in c["points"]]
+        if not boxes:
+            raise ValueError("frame_content(): nothing to frame")
+        x0, y0 = min(b[0] for b in boxes) - pad, min(b[1] for b in boxes) - pad
+        x1, y1 = max(b[2] for b in boxes) + pad, max(b[3] for b in boxes) + pad
+        return self.vertex(id, x0, y0, x1 - x0, y1 - y0,
+                           "rounded=1;absoluteArcSize=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#C8C6C4;strokeWidth=1;")
 
     def footer(self, text):
         return self.text("footer", 24, self.H - 28, self.W - 48, 15, text, color="faint")
@@ -597,8 +622,9 @@ def find_drawio() -> str | None:
     return None
 
 
-def render(path, formats=("png", "pdf"), scale=3) -> list[str]:
-    """Export with draw.io desktop. PNG is cropped to content at `scale`; PDF uses the page size."""
+def render(path, formats=("png", "pdf"), scale=3, border=12) -> list[str]:
+    """Export with draw.io desktop. PNG is cropped to content at `scale` with a `border` px white margin, so the
+    sheet frame (or frame_content()) never touches the image edge; PDF uses the page size."""
     exe = find_drawio()
     if not exe:
         raise SystemExit("draw.io desktop not found - install it or set DRAWIO=<path to draw.io executable>")
@@ -608,7 +634,7 @@ def render(path, formats=("png", "pdf"), scale=3) -> list[str]:
         out = src.with_suffix(f".{fmt}")
         cmd = [exe, "-x", "-f", fmt, "-o", str(out)]
         if fmt == "png":
-            cmd += ["-s", str(scale), "-b", "0"]
+            cmd += ["-s", str(scale), "-b", str(border)]
         subprocess.run(cmd + [str(src)], capture_output=True, timeout=240)
         if not out.exists():
             raise SystemExit(f"export failed: {out}")
@@ -631,4 +657,5 @@ if __name__ == "__main__":
     args = sys.argv[3:]
     scale = int(args[args.index("--scale") + 1]) if "--scale" in args else 3
     fmts = tuple(args[args.index("--formats") + 1].split(",")) if "--formats" in args else ("png", "pdf")
-    print("\n".join(render(sys.argv[2], fmts, scale)))
+    border = int(args[args.index("--border") + 1]) if "--border" in args else 12
+    print("\n".join(render(sys.argv[2], fmts, scale, border)))

@@ -52,7 +52,15 @@ root.append(vnet)
 t.write(tmp / "hidden.drawio", encoding="utf-8")
 check("hidden cells", any("hidden behind vnet" in i for i in lint_file(tmp / "hidden.drawio")))
 
-# 4. rel() refuses points outside a cell
+# 4. frame_content() encloses every shape and label, so lint sees nothing outside the frame
+f = Diagram("A4L")
+f.icon_c("x", "compute/Virtual_Machine.svg", 300, 300, 24, 24, f.label("a-long-resource-name-under-the-icon", "detail"))
+f.icon("y", "compute/Virtual_Machine.svg", 600, 200, 24, 24, f.label("label-to-the-right"), "right")
+f.frame_content()
+f.save(tmp / "framed.drawio")
+check("frame_content encloses labels", not any("outside the frame" in i for i in lint_file(tmp / "framed.drawio")))
+
+# 5. rel() refuses points outside a cell
 try:
     d.rel("a", x=10_000)
     check("rel() raises outside the cell", False)
