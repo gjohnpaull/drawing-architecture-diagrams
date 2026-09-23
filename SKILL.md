@@ -38,7 +38,10 @@ Estimates of text width are always wrong somewhere.
    plus icons over 40 px and cells hidden behind a filled box. Fix each finding by removing the
    space: move a real panel into the gap, shrink the box, tighten the band, or pick a smaller page.
    **Filler is not a fix:** no tables that repeat the drawing, no padded notes, no inflated icons to raise fill.
-5. **Deliver:** `.drawio` (editable), `.png` (3× ≈ 300 dpi on A4), `.pdf` (page size). Keep the build script next to
+5. **Deliver:** `.drawio` (editable), `.png` (3× ≈ 300 dpi on A4), `.pdf` (page size). Every image gets breathing
+   room and an outer border: full pages already have the sheet frame from `frame_title()`; a figure exported without it
+   (e.g. a crop for a Word document) calls `d.frame_content()` just before `save()`. `render()` adds a 12 px white
+   margin around the PNG, so no border ever touches the image edge. Keep the build script next to
    them. Before overwriting a file the user may have edited in draw.io, check its mtime and back it up.
 
 ## Layout bands (top → bottom)
@@ -85,7 +88,8 @@ not as edges. Plan these nodes first; they constrain everything around them.
 `Diagram(page=A5L|A4L|A3L…, font_size=10)` · `frame_title` · `container(kind=vnet|hub|subnet|group)` · `subnet(name, cidr)` ·
 `icon / icon_c(cx) / icon_b(cx, bottom)` · `card(icon=path|"shape=...")` · `cloud` · `text` · `panel(accent)` · `legend(kinds)` ·
 `numbered_list` · `bullets(h=None → auto)` · `table` · `title_block` · `badge(n,x,y)` · `edge(kind, src, tgt, exit, entry, points)` ·
-`rel(id, x=|y=)` (raises if outside the cell) · `columns` · `footer` · `add_edge_kind` · `save` · `lint_file(path)` · `render(path)`.
+`rel(id, x=|y=)` (raises if outside the cell) · `columns` · `footer` · `frame_content(pad)` (outer border for figures
+without a sheet frame) · `add_edge_kind` · `save` · `lint_file(path)` · `render(path, border=12)`.
 `save()` draws containers largest-first, so declaration order never hides content.
 CLI: `python archdiagram.py lint|render <file.drawio>`; the example takes `out.drawio --render`. Icon paths: `references/icons.md`.
 
@@ -101,4 +105,5 @@ CLI: `python archdiagram.py lint|render <file.drawio>`; the example takes `out.d
 | Container title crossed by a vertical line | Align the title away from the line (right/bottom) |
 | Shell heredoc with an apostrophe breaks the command | Write scripts to files |
 | PNG export is cropped, PDF is page-sized | Check the fit via the frame, the PDF via the printed page size |
+| Figure for a document starts at the image edge, no border | Call `frame_content()` before `save()`; keep `render()`'s default 12 px margin |
 | Guessed relationship drawn as fact | Draw only verified links; mark inferred ones |
